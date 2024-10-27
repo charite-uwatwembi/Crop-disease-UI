@@ -4,32 +4,35 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
-
+from tensorflow.keras.models import load_model
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Update to match the port of your React app
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Dummy model prediction function (replace with actual model)
-def predict_image(image: Image.Image):
-    # Example prediction logic
-    return "Disease X"
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Crop Disease Detection API"}
+def preprocess_image(image: Image.Image):
+    # Resize the image to the correct dimensions
+    image = image.resize((224, 224))
+    # Normalize the pixel values
+    image = np.array(image) / 255.0
+    return image
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    optimized_model = load_model('Crop-Disease-AI-Classification/saved_models/optimized_model.h5')
     contents = await file.read()
     image = Image.open(BytesIO(contents))
-    # Perform prediction using your model
-    prediction = predict_image(image)
-    return JSONResponse({"prediction": prediction})
+    image = preprocess_image(image)
+    prediction = optimized_model.predict(image)
+    predicted_disease = np.argmax(prediction)
+    confidence_level = prediction[0][predicted_disease] * 100
+    return JSONResponse(content={"prediction": predicted_disease, "confidence": confidence_level}, media_type="application/json")
 
 if __name__ == "__main__":
     import uvicorn
