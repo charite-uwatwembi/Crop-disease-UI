@@ -37,8 +37,8 @@ const UploadForm = () => {
   };
 
   return (
-    <div>
-      <h1>Upload a picture for prediction</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-green-100 p-6">
+      <h1 >Upload a picture for prediction</h1>
       <form onSubmit={handleSubmit}>
         <input type="file" onChange={handleFileChange} />
         <button type="submit">Upload</button>
